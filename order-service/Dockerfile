@@ -5,17 +5,11 @@ FROM gradle:8.5-jdk17-alpine AS build
 # Set working directory
 WORKDIR /app
 
-# Copy gradle files first for better layer caching
-COPY order-service/gradle/ gradle/
-COPY order-service/gradlew .
-COPY order-service/gradle.properties .
-COPY order-service/build.gradle .
+# Copy the entire service directory
+COPY order-service/ .
 
-# Download dependencies
-RUN ./gradlew dependencies --no-daemon
-
-# Copy source code
-COPY order-service/src/ src/
+# Create Gradle wrapper
+RUN gradle wrapper
 
 # Build the application
 RUN ./gradlew build -x test --no-daemon

@@ -5,17 +5,11 @@ FROM gradle:8.5-jdk17-alpine AS build
 # Set working directory
 WORKDIR /app
 
-# Copy gradle files first for better layer caching
-COPY auth-service/gradle/ gradle/
-COPY auth-service/gradlew .
-COPY auth-service/gradle.properties .
-COPY auth-service/build.gradle .
+# Copy the entire service directory
+COPY auth-service/ .
 
-# Download dependencies
-RUN ./gradlew dependencies --no-daemon
-
-# Copy source code
-COPY auth-service/src/ src/
+# Create Gradle wrapper
+RUN gradle wrapper
 
 # Build the application
 RUN ./gradlew build -x test --no-daemon
