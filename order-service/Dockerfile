@@ -1,20 +1,4 @@
-# Multi-stage build for Order Service
-# Build stage
-FROM gradle:8.5-jdk17-alpine AS build
-
-# Set working directory
-WORKDIR /app
-
-# Copy the entire service directory
-COPY order-service/ .
-
-# Create Gradle wrapper
-RUN gradle wrapper
-
-# Build the application
-RUN ./gradlew build -x test --no-daemon
-
-# Runtime stage
+# Runtime for Order Service (requires pre-built JAR)
 FROM eclipse-temurin:17-jre-alpine
 
 # Create non-root user for security
@@ -27,8 +11,11 @@ WORKDIR /app
 # Install curl for health checks
 RUN apk add --no-cache curl
 
-# Copy the built JAR from build stage
-COPY --from=build /app/build/libs/*.jar app.jar
+# Copy the pre-built JAR file
+COPY order-service/build/libs/*.jar app.jar
+
+# Debug: Show what was copied
+RUN echo "=== Runtime directory contents ===" && ls -la
 
 # Change ownership to non-root user
 RUN chown -R appuser:appgroup /app
