@@ -7,6 +7,9 @@ COPY . .
 # Build the application
 RUN gradle build -x test
 
+# List the built JAR files for debugging
+RUN ls -la build/libs/
+
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 
@@ -17,6 +20,9 @@ RUN apk add --no-cache curl
 
 # Copy the built JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
+
+# List files for debugging
+RUN ls -la
 
 # Expose port
 EXPOSE 8081
