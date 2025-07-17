@@ -28,8 +28,9 @@ public class ProductClient {
     
     public boolean updateStock(String productId, Integer quantity) {
         try {
-            ResponseEntity<Boolean> response = restTemplate.put(
+            ResponseEntity<Boolean> response = restTemplate.exchange(
                 productServiceUrl + "/api/products/" + productId + "/stock?quantity=" + quantity,
+                org.springframework.http.HttpMethod.PUT,
                 null,
                 Boolean.class
             );
