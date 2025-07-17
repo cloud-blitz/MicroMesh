@@ -1,35 +1,13 @@
-# Build and run Auth Service
-FROM gradle:7.6.1-jdk17
+# Runtime for Auth Service
+FROM openjdk:17-jre-slim
 
 WORKDIR /app
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy the entire project
-COPY . .
-
-# Build the application
-RUN gradle build -x test
-
-# List what was built for debugging
-RUN echo "=== Build output ===" && ls -la build/libs/
-
-# Copy the JAR to a known location - handle multiple JARs
-RUN JAR_COUNT=$(ls build/libs/*.jar 2>/dev/null | wc -l) && \
-    if [ "$JAR_COUNT" -eq 1 ]; then \
-        cp build/libs/*.jar app.jar; \
-    elif [ "$JAR_COUNT" -gt 1 ]; then \
-        echo "Multiple JARs found, using the first one:"; \
-        ls -la build/libs/*.jar; \
-        cp $(ls build/libs/*.jar | head -1) app.jar; \
-    else \
-        echo "No JAR files found in build/libs/"; \
-        exit 1; \
-    fi
-
-# Verify the JAR exists
-RUN echo "=== Final JAR check ===" && ls -la app.jar
+# Copy the JAR file from the build context
+COPY auth-service/build/libs/*.jar app.jar
 
 # Expose port
 EXPOSE 8081
