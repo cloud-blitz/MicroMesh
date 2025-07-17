@@ -1,5 +1,5 @@
 # Frontend Dockerfile
-FROM node:16-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -11,6 +11,9 @@ COPY package*.json ./
 
 # Install all dependencies (including dev dependencies)
 RUN npm ci --include=dev
+
+# Install nodemon globally to ensure it's in PATH
+RUN npm install -g nodemon
 
 # Copy application code
 COPY . .
