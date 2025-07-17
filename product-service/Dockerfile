@@ -4,11 +4,12 @@ FROM gradle:7.6.1-jdk17 AS build
 WORKDIR /app
 COPY . .
 
-# Build the application
-RUN gradle build -x test
+# Build the application with verbose output
+RUN gradle build -x test --info
 
 # List the built JAR files for debugging
-RUN ls -la build/libs/
+RUN echo "=== Build directory contents ===" && ls -la build/
+RUN echo "=== Libs directory contents ===" && ls -la build/libs/
 
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
@@ -18,11 +19,11 @@ WORKDIR /app
 # Install curl for health checks
 RUN apk add --no-cache curl
 
-# Copy the built JAR from build stage
-COPY --from=build /app/build/libs/*.jar app.jar
+# Copy the built JAR from build stage - handle Spring Boot naming
+COPY --from=build /app/build/libs/product-service-*.jar app.jar
 
 # List files for debugging
-RUN ls -la
+RUN echo "=== Runtime directory contents ===" && ls -la
 
 # Expose port
 EXPOSE 8082
