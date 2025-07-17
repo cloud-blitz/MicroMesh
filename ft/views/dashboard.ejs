@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microservices Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+        }
+        
+        .service-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-inactive {
+            background: #ef4444;
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+        }
+        
+        .db-status {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            color: white;
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="glass-card p-6 mb-8 mx-4 mt-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+                    <i class="fas fa-microchip text-2xl text-purple-600"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-white">Microservices Dashboard</h1>
+                    <p class="text-white opacity-80">Real-time monitoring & analytics</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-white opacity-80">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span id="current-time"></span>
+                </div>
+                <div class="text-white opacity-80">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    <span id="last-update">Auto-refresh: 5s</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4">
+        <!-- Service Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <% services.forEach(svc => { %>
+                <div class="service-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <span class="status-dot status-<%= svc.status %>"></span>
+                            <h3 class="text-xl font-semibold"><%= svc.name %></h3>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold"><%= svc.status.toUpperCase() %></div>
+                            <div class="text-sm opacity-80">Port <%= svc.url ? svc.url.split(':')[2].split('/')[0] : 'N/A' %></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Database Connectivity -->
+                    <div class="db-status">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-database mr-2"></i>
+                                    <span class="font-semibold">MongoDB</span>
+                                </div>
+                                <div class="text-sm opacity-90 mt-1">
+                                    <%= svc.key %>_service_db
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="status-dot status-<%= svc.status %>"></span>
+                                <span class="text-sm"><%= svc.status === 'active' ? 'Connected' : 'Disconnected' %></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-sm opacity-80 leading-relaxed mt-4">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <%= svc.description %>
+                    </div>
+                    
+                    <% if (svc.details) { %>
+                        <div class="mt-4 p-3 bg-white bg-opacity-10 rounded-lg">
+                            <div class="text-xs opacity-80">Response Time: <span class="font-semibold">~200ms</span></div>
+                            <div class="text-xs opacity-80">Uptime: <span class="font-semibold">99.9%</span></div>
+                        </div>
+                    <% } %>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Metrics Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-2xl font-bold" id="total-requests">0</div>
+                        <div class="text-sm opacity-80">Total Requests</div>
+                    </div>
+                    <i class="fas fa-chart-line text-3xl opacity-80"></i>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-2xl font-bold" id="active-services">0</div>
+                        <div class="text-sm opacity-80">Active Services</div>
+                    </div>
+                    <i class="fas fa-server text-3xl opacity-80"></i>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-2xl font-bold" id="avg-response">0ms</div>
+                        <div class="text-sm opacity-80">Avg Response</div>
+                    </div>
+                    <i class="fas fa-tachometer-alt text-3xl opacity-80"></i>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-2xl font-bold" id="db-connections">0</div>
+                        <div class="text-sm opacity-80">DB Connections</div>
+                    </div>
+                    <i class="fas fa-database text-3xl opacity-80"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Architecture Diagram -->
+        <div class="glass-card p-8 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-project-diagram mr-3"></i>
+                Service Architecture
+            </h2>
+            <div class="overflow-x-auto">
+                <div id="mermaid" class="flex justify-center">
+                    <pre class="mermaid">
+                        graph TD
+                            FE["🖥️ Frontend<br/>Dashboard"]
+                            AUTH["🔐 Auth Service<br/>Port 8081"]
+                            PRODUCT["📦 Product Service<br/>Port 8082"]
+                            ORDER["🛒 Order Service<br/>Port 8083"]
+                            DB1["🗄️ Auth DB<br/>MongoDB"]
+                            DB2["🗄️ Product DB<br/>MongoDB"]
+                            DB3["🗄️ Order DB<br/>MongoDB"]
+                            
+                            FE --> AUTH
+                            FE --> PRODUCT
+                            FE --> ORDER
+                            ORDER --> PRODUCT
+                            
+                            AUTH --> DB1
+                            PRODUCT --> DB2
+                            ORDER --> DB3
+                            
+                            style FE fill:#667eea,stroke:#333,stroke-width:2px,color:#fff
+                            style AUTH fill:#10b981,stroke:#333,stroke-width:2px,color:#fff
+                            style PRODUCT fill:#f59e0b,stroke:#333,stroke-width:2px,color:#fff
+                            style ORDER fill:#ef4444,stroke:#333,stroke-width:2px,color:#fff
+                            style DB1 fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
+                            style DB2 fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
+                            style DB3 fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Activity Feed -->
+        <div class="glass-card p-8">
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-stream mr-3"></i>
+                Real-time Activity Feed
+            </h2>
+            <div id="activity-feed" class="space-y-4 max-h-96 overflow-y-auto">
+                <div class="flex items-center p-4 bg-white bg-opacity-10 rounded-lg">
+                    <div class="loading-spinner mr-4"></div>
+                    <div class="text-white">
+                        <div class="font-semibold">Initializing dashboard...</div>
+                        <div class="text-sm opacity-80">Connecting to services</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+
+        let updateCountdown = 5;
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString();
+        }
+
+        function updateCountdown() {
+            document.getElementById('last-update').textContent = `Auto-refresh: ${updateCountdown}s`;
+            updateCountdown--;
+            if (updateCountdown < 0) {
+                updateCountdown = 5;
+                window.location.reload();
+            }
+        }
+
+        function addActivity(message, type = 'info') {
+            const feed = document.getElementById('activity-feed');
+            const activity = document.createElement('div');
+            activity.className = 'flex items-center p-4 bg-white bg-opacity-10 rounded-lg';
+            
+            const icon = type === 'success' ? 'fas fa-check-circle text-green-400' : 
+                        type === 'error' ? 'fas fa-exclamation-circle text-red-400' : 
+                        'fas fa-info-circle text-blue-400';
+            
+            activity.innerHTML = `
+                <i class="${icon} mr-4 text-xl"></i>
+                <div class="text-white">
+                    <div class="font-semibold">${message}</div>
+                    <div class="text-sm opacity-80">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+            
+            feed.insertBefore(activity, feed.firstChild);
+            
+            if (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        function updateMetrics() {
+            const activeServices = document.querySelectorAll('.status-active').length;
+            document.getElementById('active-services').textContent = activeServices;
+            document.getElementById('total-requests').textContent = Math.floor(Math.random() * 1000) + 500;
+            document.getElementById('avg-response').textContent = Math.floor(Math.random() * 100) + 50 + 'ms';
+            document.getElementById('db-connections').textContent = activeServices * 3;
+        }
+
+        // Initialize
+        updateTime();
+        updateMetrics();
+        setInterval(updateTime, 1000);
+        setInterval(updateCountdown, 1000);
+        setInterval(updateMetrics, 3000);
+
+        // Add initial activities
+        setTimeout(() => {
+            addActivity('Dashboard initialized successfully', 'success');
+            addActivity('Connected to Auth Service', 'success');
+            addActivity('Connected to Product Service', 'success');
+            addActivity('Connected to Order Service', 'success');
+        }, 1000);
+
+        // Simulate real-time activities
+        setInterval(() => {
+            const activities = [
+                'New user registration processed',
+                'Product inventory updated',
+                'Order status changed to SHIPPED',
+                'Database backup completed',
+                'Health check performed',
+                'API request processed'
+            ];
+            const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+            addActivity(randomActivity);
+        }, 5000);
+    </script>
+</body>
+</html> 
