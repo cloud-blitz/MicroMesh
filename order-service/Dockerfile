@@ -24,8 +24,10 @@ RUN echo "=== Contents of build/libs/ ===" && ls -la build/libs/
 # Try to find any JAR files
 RUN echo "=== Finding JAR files ===" && find . -name "*.jar" -type f
 
-# Copy the JAR file with explicit name
-RUN cp build/libs/order-service-0.0.1-SNAPSHOT.jar app.jar
+# Copy the JAR file - use the first JAR found in build/libs
+RUN JAR_FILE=$(find build/libs -name "*.jar" | head -1) && \
+    echo "Found JAR file: $JAR_FILE" && \
+    cp "$JAR_FILE" app.jar
 
 # Verify the JAR exists
 RUN echo "=== Final JAR check ===" && ls -la app.jar
