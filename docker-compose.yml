@@ -17,6 +17,11 @@ services:
       - ./mongo-init:/docker-entrypoint-initdb.d
     networks:
       - microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Auth Service
   auth-service:
@@ -30,10 +35,12 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATA_MONGODB_URI: mongodb://admin:password123@mongodb:27017/auth-service?authSource=admin
-      JWT_SECRET: your-secret-key-here
+      JWT_SECRET: your-secret-key-here-change-in-production
       JWT_EXPIRATION: 86400000
+      SERVER_PORT: 8081
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - microservices-network
 
@@ -49,8 +56,10 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATA_MONGODB_URI: mongodb://admin:password123@mongodb:27017/product-service?authSource=admin
+      SERVER_PORT: 8082
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - microservices-network
 
@@ -68,10 +77,14 @@ services:
       SPRING_DATA_MONGODB_URI: mongodb://admin:password123@mongodb:27017/order-service?authSource=admin
       AUTH_SERVICE_URL: http://auth-service:8081
       PRODUCT_SERVICE_URL: http://product-service:8082
+      SERVER_PORT: 8083
     depends_on:
-      - mongodb
-      - auth-service
-      - product-service
+      mongodb:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
     networks:
       - microservices-network
 
@@ -90,14 +103,18 @@ services:
       PRODUCT_SERVICE_URL: http://localhost:8082
       ORDER_SERVICE_URL: http://localhost:8083
     depends_on:
-      - auth-service
-      - product-service
-      - order-service
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
     networks:
       - microservices-network
 
 volumes:
   mongodb_data:
+    driver: local
 
 networks:
   microservices-network:
