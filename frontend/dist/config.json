@@ -1,0 +1,21 @@
+{
+  "deployment": "static",
+  "services": [
+    {
+      "name": "Auth Service",
+      "key": "auth",
+      "description": "Handles user authentication, registration, and JWT issuance."
+    },
+    {
+      "name": "Product Service",
+      "key": "product",
+      "description": "Manages product catalog and CRUD operations."
+    },
+    {
+      "name": "Order Service",
+      "key": "order",
+      "description": "Processes and tracks customer orders."
+    }
+  ],
+  "buildTime": "2025-07-30T06:20:48.698Z"
+}
