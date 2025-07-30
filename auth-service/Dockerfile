@@ -10,13 +10,13 @@ COPY gradle gradle
 COPY gradlew ./
 
 # Download dependencies
-RUN gradle dependencies --no-daemon
+RUN ./gradlew dependencies --no-daemon
 
 # Copy source code
 COPY src src
 
 # Build the application
-RUN gradle build --no-daemon
+RUN ./gradlew build --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
