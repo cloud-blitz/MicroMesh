@@ -1,12 +1,18 @@
 # Gradle
 .gradle/
 build/
-!build/libs/*.jar
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
 
 # IDE
 .idea/
 *.iml
+*.ipr
+*.iws
 .vscode/
+*.swp
+*.swo
 
 # OS
 .DS_Store
@@ -21,4 +27,12 @@ Thumbs.db
 
 # Docker
 Dockerfile
-.dockerignore 
+.dockerignore
+
+# Documentation
+README.md
+*.md
+
+# Test reports
+test-results/
+reports/ 
