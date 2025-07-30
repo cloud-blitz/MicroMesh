@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: micromesh
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+      - name: order-service
+        image: order-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8083
+        env:
+        - name: SPRING_DATA_MONGODB_URI
+          value: "mongodb://localhost:27017/order_service_db"
+        - name: PRODUCT_SERVICE_URL
+          value: "http://product-service:8082"
+        - name: SERVER_PORT
+          value: "8083"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: micromesh
+spec:
+  selector:
+    app: order-service
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+  type: ClusterIP 
