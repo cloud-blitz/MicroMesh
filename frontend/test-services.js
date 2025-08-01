@@ -1,9 +1,38 @@
 const fetch = require('node-fetch');
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '../shared/.env') });
+
+// Helper function to get service URL based on environment
+function getServiceUrl(serviceType, endpoint = '') {
+  const useALB = process.env.USE_ALB_ROUTING === 'true';
+  const environment = process.env.ENVIRONMENT || 'development';
+  
+  if (useALB || environment === 'production') {
+    // Use ALB URLs for production
+    const albUrls = {
+      auth: process.env.AUTH_SERVICE_ALB_URL || 'https://api.micromesh.com/auth',
+      product: process.env.PRODUCT_SERVICE_ALB_URL || 'https://api.micromesh.com/products',
+      order: process.env.ORDER_SERVICE_ALB_URL || 'https://api.micromesh.com/orders'
+    };
+    return `${albUrls[serviceType]}${endpoint}`;
+  } else {
+    // Use local URLs for development
+    const localUrls = {
+      auth: process.env.AUTH_SERVICE_URL || 'http://localhost:8081',
+      product: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8082',
+      order: process.env.ORDER_SERVICE_URL || 'http://localhost:8083'
+    };
+    return `${localUrls[serviceType]}${endpoint}`;
+  }
+}
 
 const SERVICES = {
-  auth: 'http://localhost:8081',
-  product: 'http://localhost:8082',
-  order: 'http://localhost:8083'
+  auth: getServiceUrl('auth'),
+  product: getServiceUrl('product'),
+  order: getServiceUrl('order')
 };
 
 async function testService(serviceName, baseUrl) {
@@ -44,7 +73,7 @@ async function testAuthService(baseUrl) {
   
   // Test registration
   try {
-    const registerResponse = await fetch(`${baseUrl}/auth/register`, {
+    const registerResponse = await fetch(`${baseUrl}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -65,7 +94,7 @@ async function testAuthService(baseUrl) {
 
   // Test login
   try {
-    const loginResponse = await fetch(`${baseUrl}/auth/login`, {
+    const loginResponse = await fetch(`${baseUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -89,7 +118,7 @@ async function testProductService(baseUrl) {
   
   // Test get products
   try {
-    const productsResponse = await fetch(`${baseUrl}/products`);
+    const productsResponse = await fetch(`${baseUrl}`);
     if (productsResponse.ok) {
       console.log('  ✅ Get products works');
     } else {
@@ -101,7 +130,7 @@ async function testProductService(baseUrl) {
 
   // Test add product
   try {
-    const addProductResponse = await fetch(`${baseUrl}/products`, {
+    const addProductResponse = await fetch(`${baseUrl}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -127,7 +156,7 @@ async function testOrderService(baseUrl) {
   
   // Test get orders
   try {
-    const ordersResponse = await fetch(`${baseUrl}/orders`);
+    const ordersResponse = await fetch(`${baseUrl}`);
     if (ordersResponse.ok) {
       console.log('  ✅ Get orders works');
     } else {
@@ -139,7 +168,7 @@ async function testOrderService(baseUrl) {
 
   // Test create order
   try {
-    const createOrderResponse = await fetch(`${baseUrl}/orders`, {
+    const createOrderResponse = await fetch(`${baseUrl}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -162,6 +191,12 @@ async function testOrderService(baseUrl) {
 
 async function runTests() {
   console.log('🚀 Starting Microservices Testing...\n');
+  
+  const environment = process.env.ENVIRONMENT || 'development';
+  const useALB = process.env.USE_ALB_ROUTING === 'true';
+  
+  console.log(`Environment: ${environment}`);
+  console.log(`ALB Routing: ${useALB ? 'Enabled' : 'Disabled'}\n`);
   
   const results = {};
   

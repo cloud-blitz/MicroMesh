@@ -23,6 +23,12 @@ A comprehensive testing interface for all microservices with real-time monitorin
 - Tabbed interface for organized testing
 - Beautiful gradients and animations
 
+### 🌐 ALB Path-Based Routing Support
+- Automatic routing based on environment
+- Development: Direct service URLs
+- Production: ALB path-based routing
+- Configurable via environment variables
+
 ## Getting Started
 
 ### Prerequisites
@@ -50,6 +56,44 @@ npm start
 
 The dashboard will be available at: http://localhost:3000
 
+## Environment Configuration
+
+### Development Environment
+The dashboard uses local service URLs by default:
+- Auth Service: `http://localhost:8081`
+- Product Service: `http://localhost:8082`
+- Order Service: `http://localhost:8083`
+
+### Production Environment (ALB Routing)
+For production with ALB path-based routing:
+- Auth Service: `https://api.micromesh.com/auth`
+- Product Service: `https://api.micromesh.com/products`
+- Order Service: `https://api.micromesh.com/orders`
+
+### Environment Variables
+
+#### Development (.env)
+```bash
+ENVIRONMENT=development
+USE_ALB_ROUTING=false
+
+# Local service URLs
+AUTH_SERVICE_URL=http://localhost:8081
+PRODUCT_SERVICE_URL=http://localhost:8082
+ORDER_SERVICE_URL=http://localhost:8083
+```
+
+#### Production (.env)
+```bash
+ENVIRONMENT=production
+USE_ALB_ROUTING=true
+
+# ALB service URLs
+AUTH_SERVICE_ALB_URL=https://api.micromesh.com/auth
+PRODUCT_SERVICE_ALB_URL=https://api.micromesh.com/products
+ORDER_SERVICE_ALB_URL=https://api.micromesh.com/orders
+```
+
 ## Usage Guide
 
 ### 1. Auth Service Testing
@@ -76,17 +120,57 @@ The dashboard will be available at: http://localhost:3000
 
 The dashboard proxies requests to the following backend services:
 
-### Auth Service (Port 8081)
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
+### Auth Service
+- **Development**: `http://localhost:8081/auth/register`, `http://localhost:8081/auth/login`
+- **Production**: `https://api.micromesh.com/auth/register`, `https://api.micromesh.com/auth/login`
 
-### Product Service (Port 8082)
-- `GET /api/products` - Get all products
-- `POST /api/products` - Add new product
+### Product Service
+- **Development**: `http://localhost:8082/products`
+- **Production**: `https://api.micromesh.com/products`
 
-### Order Service (Port 8083)
-- `GET /api/orders` - Get all orders
-- `POST /api/orders` - Create new order
+### Order Service
+- **Development**: `http://localhost:8083/orders`
+- **Production**: `https://api.micromesh.com/orders`
+
+## ALB Path-Based Routing
+
+The dashboard automatically adapts to your ALB configuration:
+
+### Ingress Configuration (k8s/ingress.yaml)
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: micromesh-ingress
+spec:
+  rules:
+  - host: api.micromesh.com
+    http:
+      paths:
+      - path: /auth
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 8081
+      - path: /products
+        backend:
+          service:
+            name: product-service
+            port:
+              number: 8082
+      - path: /orders
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 8083
+```
+
+### URL Mapping
+- `/auth/*` → Auth Service (Port 8081)
+- `/products/*` → Product Service (Port 8082)
+- `/orders/*` → Order Service (Port 8083)
 
 ## Testing Workflow
 
@@ -98,12 +182,39 @@ The dashboard proxies requests to the following backend services:
 6. **Test Orders**: Create orders using product IDs
 7. **Monitor**: Watch the activity feed for real-time updates
 
+## Deployment
+
+### Development
+```bash
+# Use local services
+ENVIRONMENT=development USE_ALB_ROUTING=false npm start
+```
+
+### Production
+```bash
+# Use ALB routing
+ENVIRONMENT=production USE_ALB_ROUTING=true npm start
+```
+
+### Docker Deployment
+```bash
+# Build and run with production config
+docker build -t micromesh-frontend .
+docker run -p 3000:3000 --env-file shared/.env micromesh-frontend
+```
+
 ## Troubleshooting
 
 ### Services Not Responding
 - Check if Docker containers are running: `docker ps`
 - Restart services: `docker-compose restart`
 - Check logs: `docker-compose logs [service-name]`
+
+### ALB Routing Issues
+- Verify ingress configuration in Kubernetes
+- Check ALB health status
+- Ensure DNS resolution for `api.micromesh.com`
+- Verify SSL certificates for HTTPS endpoints
 
 ### Dashboard Issues
 - Clear browser cache
@@ -137,9 +248,11 @@ The dashboard proxies requests to the following backend services:
 
 The dashboard uses environment variables from `../shared/.env`:
 - `FRONTEND_PORT` - Dashboard port (default: 3000)
-- `AUTH_SERVICE_URL` - Auth service URL
-- `PRODUCT_SERVICE_URL` - Product service URL
-- `ORDER_SERVICE_URL` - Order service URL
+- `ENVIRONMENT` - Environment (development/production)
+- `USE_ALB_ROUTING` - Enable ALB routing (true/false)
+- `AUTH_SERVICE_URL` / `AUTH_SERVICE_ALB_URL` - Auth service URLs
+- `PRODUCT_SERVICE_URL` / `PRODUCT_SERVICE_ALB_URL` - Product service URLs
+- `ORDER_SERVICE_URL` / `ORDER_SERVICE_ALB_URL` - Order service URLs
 
 ## Contributing
 

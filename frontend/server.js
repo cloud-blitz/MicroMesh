@@ -16,24 +16,48 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
+// Helper function to get service URL based on environment
+function getServiceUrl(serviceType, endpoint = '') {
+  const useALB = process.env.USE_ALB_ROUTING === 'true';
+  const environment = process.env.ENVIRONMENT || 'development';
+  
+  if (useALB || environment === 'production') {
+    // Use ALB URLs for production
+    const albUrls = {
+      auth: process.env.AUTH_SERVICE_ALB_URL || 'https://api.micromesh.com/auth',
+      product: process.env.PRODUCT_SERVICE_ALB_URL || 'https://api.micromesh.com/products',
+      order: process.env.ORDER_SERVICE_ALB_URL || 'https://api.micromesh.com/orders'
+    };
+    return `${albUrls[serviceType]}${endpoint}`;
+  } else {
+    // Use local URLs for development
+    const localUrls = {
+      auth: process.env.AUTH_SERVICE_URL || 'http://localhost:8081',
+      product: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8082',
+      order: process.env.ORDER_SERVICE_URL || 'http://localhost:8083'
+    };
+    return `${localUrls[serviceType]}${endpoint}`;
+  }
+}
+
 // Service endpoints from env
 const SERVICES = [
   {
     name: 'Auth Service',
     key: 'auth',
-    url: (process.env.AUTH_SERVICE_URL || 'http://localhost:8081') + '/health',
+    url: getServiceUrl('auth', '/health'),
     description: 'Handles user authentication, registration, and JWT issuance.'
   },
   {
     name: 'Product Service',
     key: 'product',
-    url: (process.env.PRODUCT_SERVICE_URL || 'http://localhost:8082') + '/health',
+    url: getServiceUrl('product', '/health'),
     description: 'Manages product catalog and CRUD operations.'
   },
   {
     name: 'Order Service',
     key: 'order',
-    url: (process.env.ORDER_SERVICE_URL || 'http://localhost:8083') + '/health',
+    url: getServiceUrl('order', '/health'),
     description: 'Processes and tracks customer orders.'
   }
 ];
@@ -69,8 +93,8 @@ app.get('/', async (req, res) => {
 // Auth Service API endpoints
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const authUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:8081';
-    const response = await fetch(`${authUrl}/auth/register`, {
+    const authUrl = getServiceUrl('auth');
+    const response = await fetch(`${authUrl}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -84,8 +108,8 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const authUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:8081';
-    const response = await fetch(`${authUrl}/auth/login`, {
+    const authUrl = getServiceUrl('auth');
+    const response = await fetch(`${authUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -100,8 +124,8 @@ app.post('/api/auth/login', async (req, res) => {
 // Product Service API endpoints
 app.post('/api/products', async (req, res) => {
   try {
-    const productUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8082';
-    const response = await fetch(`${productUrl}/products`, {
+    const productUrl = getServiceUrl('product');
+    const response = await fetch(`${productUrl}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -115,8 +139,8 @@ app.post('/api/products', async (req, res) => {
 
 app.get('/api/products', async (req, res) => {
   try {
-    const productUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8082';
-    const response = await fetch(`${productUrl}/products`);
+    const productUrl = getServiceUrl('product');
+    const response = await fetch(`${productUrl}`);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error) {
@@ -127,8 +151,8 @@ app.get('/api/products', async (req, res) => {
 // Order Service API endpoints
 app.post('/api/orders', async (req, res) => {
   try {
-    const orderUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:8083';
-    const response = await fetch(`${orderUrl}/orders`, {
+    const orderUrl = getServiceUrl('order');
+    const response = await fetch(`${orderUrl}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -142,8 +166,8 @@ app.post('/api/orders', async (req, res) => {
 
 app.get('/api/orders', async (req, res) => {
   try {
-    const orderUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:8083';
-    const response = await fetch(`${orderUrl}/orders`);
+    const orderUrl = getServiceUrl('order');
+    const response = await fetch(`${orderUrl}`);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error) {
@@ -152,5 +176,9 @@ app.get('/api/orders', async (req, res) => {
 });
 
 app.listen(PORT, () => {
+  const environment = process.env.ENVIRONMENT || 'development';
+  const useALB = process.env.USE_ALB_ROUTING === 'true';
   console.log(`Frontend dashboard running on http://localhost:${PORT}`);
+  console.log(`Environment: ${environment}`);
+  console.log(`ALB Routing: ${useALB ? 'Enabled' : 'Disabled'}`);
 }); 

@@ -16,4 +16,4 @@ Upload the contents of this folder to your CloudFront distribution's S3 bucket.
 - For real-time data, you'll need to configure API endpoints
 - The dashboard will show mock data in static mode
 
-Build time: 2025-08-01T18:05:38.674Z
+Build time: 2025-08-01T19:20:05.075Z
