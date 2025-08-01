@@ -8,7 +8,8 @@
     "dev": "npx nodemon server.js",
     "build": "npm install && node build-static.js",
     "build:static": "node build-static.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test-services.js",
+    "test:services": "node test-services.js"
   },
   "keywords": ["microservices", "dashboard", "monitoring", "real-time"],
   "author": "",

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Microservices Dashboard</title>
+    <title>Microservices Testing Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -63,33 +63,88 @@
             50% { opacity: 0.3; }
         }
         
-        .metric-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .form-card {
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
             padding: 24px;
-            color: white;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
-        .db-status {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 12px;
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .response-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             padding: 16px;
-            margin: 12px 0;
+            margin-top: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .success-response {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .error-response {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .tab-button {
+            background: rgba(255, 255, 255, 0.1);
             color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
         
-        .loading-spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
+        .tab-button.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: #374151;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
     </style>
 </head>
@@ -102,18 +157,14 @@
                     <i class="fas fa-microchip text-2xl text-purple-600"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold text-white">Microservices Dashboard</h1>
-                    <p class="text-white opacity-80">Real-time monitoring & analytics</p>
+                    <h1 class="text-3xl font-bold text-white">Microservices Testing Dashboard</h1>
+                    <p class="text-white opacity-80">Test all backend services and monitor data flow</p>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
                 <div class="text-white opacity-80">
                     <i class="fas fa-clock mr-2"></i>
                     <span id="current-time"></span>
-                </div>
-                <div class="text-white opacity-80">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    <span id="last-update">Auto-refresh: 5s</span>
                 </div>
             </div>
         </div>
@@ -135,79 +186,178 @@
                         </div>
                     </div>
                     
-                    <!-- Database Connectivity -->
-                    <div class="db-status">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-database mr-2"></i>
-                                    <span class="font-semibold">MongoDB</span>
-                                </div>
-                                <div class="text-sm opacity-90 mt-1">
-                                    <%= svc.key %>_service_db
-                                </div>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="status-dot status-<%= svc.status %>"></span>
-                                <span class="text-sm"><%= svc.status === 'active' ? 'Connected' : 'Disconnected' %></span>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="text-sm opacity-80 leading-relaxed mt-4">
                         <i class="fas fa-info-circle mr-1"></i>
                         <%= svc.description %>
                     </div>
-                    
-                    <% if (svc.details) { %>
-                        <div class="mt-4 p-3 bg-white bg-opacity-10 rounded-lg">
-                            <div class="text-xs opacity-80">Response Time: <span class="font-semibold">~200ms</span></div>
-                            <div class="text-xs opacity-80">Uptime: <span class="font-semibold">99.9%</span></div>
-                        </div>
-                    <% } %>
                 </div>
             <% }) %>
         </div>
 
-        <!-- Metrics Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="metric-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-2xl font-bold" id="total-requests">0</div>
-                        <div class="text-sm opacity-80">Total Requests</div>
+        <!-- Testing Tabs -->
+        <div class="glass-card p-8 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-vial mr-3"></i>
+                Service Testing Interface
+            </h2>
+            
+            <!-- Tab Buttons -->
+            <div class="flex space-x-2 mb-6">
+                <button class="tab-button active" onclick="showTab('auth')">
+                    <i class="fas fa-user-shield mr-2"></i>Auth Service
+                </button>
+                <button class="tab-button" onclick="showTab('product')">
+                    <i class="fas fa-box mr-2"></i>Product Service
+                </button>
+                <button class="tab-button" onclick="showTab('order')">
+                    <i class="fas fa-shopping-cart mr-2"></i>Order Service
+                </button>
+            </div>
+
+            <!-- Auth Service Tab -->
+            <div id="auth-tab" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- User Registration Form -->
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-user-plus mr-2 text-green-600"></i>
+                            User Registration
+                        </h3>
+                        <form id="register-form">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                <input type="text" name="username" class="form-input" placeholder="Enter username" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" name="email" class="form-input" placeholder="Enter email" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input type="password" name="password" class="form-input" placeholder="Enter password" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">
+                                <i class="fas fa-user-plus mr-2"></i>Register User
+                            </button>
+                        </form>
+                        <div id="register-response" class="response-box" style="display: none;"></div>
                     </div>
-                    <i class="fas fa-chart-line text-3xl opacity-80"></i>
+
+                    <!-- User Login Form -->
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-sign-in-alt mr-2 text-blue-600"></i>
+                            User Login
+                        </h3>
+                        <form id="login-form">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                <input type="text" name="username" class="form-input" placeholder="Enter username" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input type="password" name="password" class="form-input" placeholder="Enter password" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Login
+                            </button>
+                        </form>
+                        <div id="login-response" class="response-box" style="display: none;"></div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="metric-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-2xl font-bold" id="active-services">0</div>
-                        <div class="text-sm opacity-80">Active Services</div>
+
+            <!-- Product Service Tab -->
+            <div id="product-tab" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Add Product Form -->
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-plus-circle mr-2 text-green-600"></i>
+                            Add New Product
+                        </h3>
+                        <form id="add-product-form">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                                <input type="text" name="name" class="form-input" placeholder="Enter product name" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <textarea name="description" class="form-input" rows="3" placeholder="Enter product description" required></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                                <input type="number" name="price" class="form-input" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                                <input type="number" name="stockQuantity" class="form-input" placeholder="0" min="0" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">
+                                <i class="fas fa-plus-circle mr-2"></i>Add Product
+                            </button>
+                        </form>
+                        <div id="add-product-response" class="response-box" style="display: none;"></div>
                     </div>
-                    <i class="fas fa-server text-3xl opacity-80"></i>
+
+                    <!-- Get Products -->
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list mr-2 text-blue-600"></i>
+                            Get All Products
+                        </h3>
+                        <button onclick="getAllProducts()" class="btn-primary w-full mb-4">
+                            <i class="fas fa-list mr-2"></i>Fetch Products
+                        </button>
+                        <div id="products-response" class="response-box" style="display: none;"></div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="metric-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-2xl font-bold" id="avg-response">0ms</div>
-                        <div class="text-sm opacity-80">Avg Response</div>
+
+            <!-- Order Service Tab -->
+            <div id="order-tab" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Create Order Form -->
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-shopping-cart mr-2 text-green-600"></i>
+                            Create New Order
+                        </h3>
+                        <form id="create-order-form">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                                <input type="text" name="customerName" class="form-input" placeholder="Enter customer name" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product ID</label>
+                                <input type="text" name="productId" class="form-input" placeholder="Enter product ID" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                <input type="number" name="quantity" class="form-input" placeholder="1" min="1" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Shipping Address</label>
+                                <textarea name="shippingAddress" class="form-input" rows="3" placeholder="Enter shipping address" required></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">
+                                <i class="fas fa-shopping-cart mr-2"></i>Create Order
+                            </button>
+                        </form>
+                        <div id="create-order-response" class="response-box" style="display: none;"></div>
                     </div>
-                    <i class="fas fa-tachometer-alt text-3xl opacity-80"></i>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-2xl font-bold" id="db-connections">0</div>
-                        <div class="text-sm opacity-80">DB Connections</div>
+
+                    <!-- Get Orders -->
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list mr-2 text-blue-600"></i>
+                            Get All Orders
+                        </h3>
+                        <button onclick="getAllOrders()" class="btn-primary w-full mb-4">
+                            <i class="fas fa-list mr-2"></i>Fetch Orders
+                        </button>
+                        <div id="orders-response" class="response-box" style="display: none;"></div>
                     </div>
-                    <i class="fas fa-database text-3xl opacity-80"></i>
                 </div>
             </div>
         </div>
@@ -261,8 +411,8 @@
                 <div class="flex items-center p-4 bg-white bg-opacity-10 rounded-lg">
                     <div class="loading-spinner mr-4"></div>
                     <div class="text-white">
-                        <div class="font-semibold">Initializing dashboard...</div>
-                        <div class="text-sm opacity-80">Connecting to services</div>
+                        <div class="font-semibold">Initializing testing dashboard...</div>
+                        <div class="text-sm opacity-80">Ready to test all services</div>
                     </div>
                 </div>
             </div>
@@ -279,20 +429,25 @@
             }
         });
 
-        let updateCountdown = 5;
+        // Tab functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
 
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Utility functions
         function updateTime() {
             const now = new Date();
             document.getElementById('current-time').textContent = now.toLocaleTimeString();
-        }
-
-        function updateCountdown() {
-            document.getElementById('last-update').textContent = `Auto-refresh: ${updateCountdown}s`;
-            updateCountdown--;
-            if (updateCountdown < 0) {
-                updateCountdown = 5;
-                window.location.reload();
-            }
         }
 
         function addActivity(message, type = 'info') {
@@ -319,42 +474,172 @@
             }
         }
 
-        function updateMetrics() {
-            const activeServices = document.querySelectorAll('.status-active').length;
-            document.getElementById('active-services').textContent = activeServices;
-            document.getElementById('total-requests').textContent = Math.floor(Math.random() * 1000) + 500;
-            document.getElementById('avg-response').textContent = Math.floor(Math.random() * 100) + 50 + 'ms';
-            document.getElementById('db-connections').textContent = activeServices * 3;
+        function showResponse(elementId, data, isSuccess = true) {
+            const responseBox = document.getElementById(elementId);
+            responseBox.style.display = 'block';
+            responseBox.className = `response-box ${isSuccess ? 'success-response' : 'error-response'}`;
+            responseBox.innerHTML = `<strong>${isSuccess ? '✅ Success' : '❌ Error'}:</strong><br>${JSON.stringify(data, null, 2)}`;
+        }
+
+        // Auth Service API calls
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('register-response', result, true);
+                    addActivity(`User registered: ${data.username}`, 'success');
+                } else {
+                    showResponse('register-response', result, false);
+                    addActivity(`Registration failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResponse('register-response', { error: error.message }, false);
+                addActivity(`Registration error: ${error.message}`, 'error');
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('login-response', { ...result, token: '***HIDDEN***' }, true);
+                    addActivity(`User logged in: ${data.username}`, 'success');
+                } else {
+                    showResponse('login-response', result, false);
+                    addActivity(`Login failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResponse('login-response', { error: error.message }, false);
+                addActivity(`Login error: ${error.message}`, 'error');
+            }
+        });
+
+        // Product Service API calls
+        document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            data.price = parseFloat(data.price);
+            data.stockQuantity = parseInt(data.stockQuantity);
+            
+            try {
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('add-product-response', result, true);
+                    addActivity(`Product added: ${data.name}`, 'success');
+                } else {
+                    showResponse('add-product-response', result, false);
+                    addActivity(`Product creation failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResponse('add-product-response', { error: error.message }, false);
+                addActivity(`Product creation error: ${error.message}`, 'error');
+            }
+        });
+
+        async function getAllProducts() {
+            try {
+                const response = await fetch('/api/products');
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('products-response', result, true);
+                    addActivity(`Fetched ${result.length} products`, 'success');
+                } else {
+                    showResponse('products-response', result, false);
+                    addActivity(`Failed to fetch products: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResponse('products-response', { error: error.message }, false);
+                addActivity(`Products fetch error: ${error.message}`, 'error');
+            }
+        }
+
+        // Order Service API calls
+        document.getElementById('create-order-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            data.quantity = parseInt(data.quantity);
+            
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('create-order-response', result, true);
+                    addActivity(`Order created: ${data.customerName}`, 'success');
+                } else {
+                    showResponse('create-order-response', result, false);
+                    addActivity(`Order creation failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResponse('create-order-response', { error: error.message }, false);
+                addActivity(`Order creation error: ${error.message}`, 'error');
+            }
+        });
+
+        async function getAllOrders() {
+            try {
+                const response = await fetch('/api/orders');
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('orders-response', result, true);
+                    addActivity(`Fetched ${result.length} orders`, 'success');
+                } else {
+                    showResponse('orders-response', result, false);
+                    addActivity(`Failed to fetch orders: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResponse('orders-response', { error: error.message }, false);
+                addActivity(`Orders fetch error: ${error.message}`, 'error');
+            }
         }
 
         // Initialize
         updateTime();
-        updateMetrics();
         setInterval(updateTime, 1000);
-        setInterval(updateCountdown, 1000);
-        setInterval(updateMetrics, 3000);
 
         // Add initial activities
         setTimeout(() => {
-            addActivity('Dashboard initialized successfully', 'success');
-            addActivity('Connected to Auth Service', 'success');
-            addActivity('Connected to Product Service', 'success');
-            addActivity('Connected to Order Service', 'success');
+            addActivity('Testing dashboard initialized', 'success');
+            addActivity('Ready to test all microservices', 'info');
         }, 1000);
-
-        // Simulate real-time activities
-        setInterval(() => {
-            const activities = [
-                'New user registration processed',
-                'Product inventory updated',
-                'Order status changed to SHIPPED',
-                'Database backup completed',
-                'Health check performed',
-                'API request processed'
-            ];
-            const randomActivity = activities[Math.floor(Math.random() * activities.length)];
-            addActivity(randomActivity);
-        }, 5000);
     </script>
 </body>
 </html> 

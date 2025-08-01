@@ -14,6 +14,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
 // Service endpoints from env
 const SERVICES = [
@@ -62,6 +63,91 @@ app.get('/', async (req, res) => {
       details: null
     }));
     res.render('dashboard', { services: fallbackServices });
+  }
+});
+
+// Auth Service API endpoints
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const authUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:8081';
+    const response = await fetch(`${authUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const authUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:8081';
+    const response = await fetch(`${authUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Product Service API endpoints
+app.post('/api/products', async (req, res) => {
+  try {
+    const productUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8082';
+    const response = await fetch(`${productUrl}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/products', async (req, res) => {
+  try {
+    const productUrl = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8082';
+    const response = await fetch(`${productUrl}/products`);
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Order Service API endpoints
+app.post('/api/orders', async (req, res) => {
+  try {
+    const orderUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:8083';
+    const response = await fetch(`${orderUrl}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orderUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:8083';
+    const response = await fetch(`${orderUrl}/orders`);
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
