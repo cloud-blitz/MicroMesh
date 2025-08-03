@@ -94,7 +94,7 @@ app.get('/', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const authUrl = getServiceUrl('auth');
-    const response = await fetch(`${authUrl}/register`, {
+    const response = await fetch(`${authUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -109,7 +109,7 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const authUrl = getServiceUrl('auth');
-    const response = await fetch(`${authUrl}/login`, {
+    const response = await fetch(`${authUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -125,7 +125,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   try {
     const productUrl = getServiceUrl('product');
-    const response = await fetch(`${productUrl}`, {
+    const response = await fetch(`${productUrl}/api/products`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -140,7 +140,7 @@ app.post('/api/products', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const productUrl = getServiceUrl('product');
-    const response = await fetch(`${productUrl}`);
+    const response = await fetch(`${productUrl}/api/products`);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error) {
@@ -152,7 +152,7 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
   try {
     const orderUrl = getServiceUrl('order');
-    const response = await fetch(`${orderUrl}`, {
+    const response = await fetch(`${orderUrl}/api/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -167,7 +167,7 @@ app.post('/api/orders', async (req, res) => {
 app.get('/api/orders', async (req, res) => {
   try {
     const orderUrl = getServiceUrl('order');
-    const response = await fetch(`${orderUrl}`);
+    const response = await fetch(`${orderUrl}/api/orders`);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error) {

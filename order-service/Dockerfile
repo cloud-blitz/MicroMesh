@@ -19,7 +19,7 @@ COPY src src
 RUN ./gradlew build --no-daemon
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM amazoncorretto:17-alpine
 
 # Set working directory
 WORKDIR /app

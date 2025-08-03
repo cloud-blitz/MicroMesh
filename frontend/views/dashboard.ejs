@@ -3,11 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Microservices Testing Dashboard</title>
+    <title>MicroMesh E-Commerce Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --dark: #1f2937;
+        }
+        
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
@@ -102,15 +111,15 @@
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
         }
         
-        .response-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+        .debug-panel {
+            background: #1f2937;
+            color: #f9fafb;
             border-radius: 8px;
             padding: 16px;
             margin-top: 16px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
         }
         
@@ -146,25 +155,85 @@
         .tab-content.active {
             display: block;
         }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .debug-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <!-- Debug Toggle -->
+    <div class="debug-toggle">
+        <button id="debug-toggle" class="btn-primary">
+            <i class="fas fa-bug mr-2"></i>Debug Mode
+        </button>
+    </div>
+
     <!-- Header -->
     <header class="glass-card p-6 mb-8 mx-4 mt-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                    <i class="fas fa-microchip text-2xl text-purple-600"></i>
+                    <i class="fas fa-shopping-cart text-2xl text-purple-600"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold text-white">Microservices Testing Dashboard</h1>
-                    <p class="text-white opacity-80">Test all backend services and monitor data flow</p>
+                    <h1 class="text-3xl font-bold text-white">MicroMesh E-Commerce</h1>
+                    <p class="text-white opacity-80">Complete microservices testing platform with debug mode</p>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
                 <div class="text-white opacity-80">
                     <i class="fas fa-clock mr-2"></i>
                     <span id="current-time"></span>
+                </div>
+                <div class="text-white opacity-80">
+                    <i class="fas fa-signal mr-2"></i>
+                    <span id="request-count">0</span> requests
                 </div>
             </div>
         </div>
@@ -194,28 +263,100 @@
             <% }) %>
         </div>
 
-        <!-- Testing Tabs -->
+        <!-- Main Dashboard Tabs -->
         <div class="glass-card p-8 mb-8">
             <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
-                <i class="fas fa-vial mr-3"></i>
-                Service Testing Interface
+                <i class="fas fa-tachometer-alt mr-3"></i>
+                E-Commerce Dashboard
             </h2>
             
             <!-- Tab Buttons -->
             <div class="flex space-x-2 mb-6">
-                <button class="tab-button active" onclick="showTab('auth')">
-                    <i class="fas fa-user-shield mr-2"></i>Auth Service
+                <button class="tab-button active" onclick="showTab('dashboard')">
+                    <i class="fas fa-chart-line mr-2"></i>Dashboard
                 </button>
-                <button class="tab-button" onclick="showTab('product')">
-                    <i class="fas fa-box mr-2"></i>Product Service
+                <button class="tab-button" onclick="showTab('auth')">
+                    <i class="fas fa-user-shield mr-2"></i>Authentication
                 </button>
-                <button class="tab-button" onclick="showTab('order')">
-                    <i class="fas fa-shopping-cart mr-2"></i>Order Service
+                <button class="tab-button" onclick="showTab('products')">
+                    <i class="fas fa-box mr-2"></i>Products
+                </button>
+                <button class="tab-button" onclick="showTab('orders')">
+                    <i class="fas fa-shopping-cart mr-2"></i>Orders
+                </button>
+                <button class="tab-button" onclick="showTab('debug')">
+                    <i class="fas fa-bug mr-2"></i>Debug Console
                 </button>
             </div>
 
-            <!-- Auth Service Tab -->
-            <div id="auth-tab" class="tab-content active">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="form-card">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                <i class="fas fa-users text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Total Users</h3>
+                                <p class="text-2xl font-bold text-blue-600" id="user-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-card">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                <i class="fas fa-box text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Total Products</h3>
+                                <p class="text-2xl font-bold text-green-600" id="product-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-card">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                <i class="fas fa-shopping-cart text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Total Orders</h3>
+                                <p class="text-2xl font-bold text-purple-600" id="order-count">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-card">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                                <i class="fas fa-dollar-sign text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Total Revenue</h3>
+                                <p class="text-2xl font-bold text-orange-600" id="revenue">$0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Activity</h3>
+                        <canvas id="activityChart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <div class="form-card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Service Health</h3>
+                        <canvas id="healthChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auth Tab -->
+            <div id="auth-tab" class="tab-content">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- User Registration Form -->
                     <div class="form-card">
@@ -240,7 +381,7 @@
                                 <i class="fas fa-user-plus mr-2"></i>Register User
                             </button>
                         </form>
-                        <div id="register-response" class="response-box" style="display: none;"></div>
+                        <div id="register-debug" class="debug-panel" style="display: none;"></div>
                     </div>
 
                     <!-- User Login Form -->
@@ -262,14 +403,14 @@
                                 <i class="fas fa-sign-in-alt mr-2"></i>Login
                             </button>
                         </form>
-                        <div id="login-response" class="response-box" style="display: none;"></div>
+                        <div id="login-debug" class="debug-panel" style="display: none;"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Product Service Tab -->
-            <div id="product-tab" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Products Tab -->
+            <div id="products-tab" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Add Product Form -->
                     <div class="form-card">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">
@@ -285,38 +426,48 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                                 <textarea name="description" class="form-input" rows="3" placeholder="Enter product description" required></textarea>
                             </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                                <input type="number" name="price" class="form-input" placeholder="0.00" step="0.01" min="0" required>
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
-                                <input type="number" name="stockQuantity" class="form-input" placeholder="0" min="0" required>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                                    <input type="number" name="price" class="form-input" placeholder="0.00" step="0.01" min="0" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Stock</label>
+                                    <input type="number" name="stockQuantity" class="form-input" placeholder="0" min="0" required>
+                                </div>
                             </div>
                             <button type="submit" class="btn-primary w-full">
                                 <i class="fas fa-plus-circle mr-2"></i>Add Product
                             </button>
                         </form>
-                        <div id="add-product-response" class="response-box" style="display: none;"></div>
+                        <div id="add-product-debug" class="debug-panel" style="display: none;"></div>
                     </div>
 
-                    <!-- Get Products -->
+                    <!-- Products List -->
                     <div class="form-card">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-list mr-2 text-blue-600"></i>
-                            Get All Products
-                        </h3>
-                        <button onclick="getAllProducts()" class="btn-primary w-full mb-4">
-                            <i class="fas fa-list mr-2"></i>Fetch Products
-                        </button>
-                        <div id="products-response" class="response-box" style="display: none;"></div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">
+                                <i class="fas fa-list mr-2 text-blue-600"></i>
+                                Products Catalog
+                            </h3>
+                            <button onclick="loadProducts()" class="btn-primary">
+                                <i class="fas fa-refresh mr-2"></i>Refresh
+                            </button>
+                        </div>
+                        <div id="products-list" class="product-grid">
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-box text-4xl mb-4"></i>
+                                <p>No products loaded</p>
+                            </div>
+                        </div>
+                        <div id="products-debug" class="debug-panel" style="display: none;"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Order Service Tab -->
-            <div id="order-tab" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Orders Tab -->
+            <div id="orders-tab" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Create Order Form -->
                     <div class="form-card">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">
@@ -329,74 +480,77 @@
                                 <input type="text" name="customerName" class="form-input" placeholder="Enter customer name" required>
                             </div>
                             <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Customer Email</label>
+                                <input type="email" name="customerEmail" class="form-input" placeholder="Enter customer email" required>
+                            </div>
+                            <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Product ID</label>
                                 <input type="text" name="productId" class="form-input" placeholder="Enter product ID" required>
                             </div>
                             <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                                <input type="number" name="quantity" class="form-input" placeholder="1" min="1" required>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                                <input type="text" name="productName" class="form-input" placeholder="Enter product name" required>
                             </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Shipping Address</label>
-                                <textarea name="shippingAddress" class="form-input" rows="3" placeholder="Enter shipping address" required></textarea>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                    <input type="number" name="quantity" class="form-input" placeholder="1" min="1" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                                    <input type="number" name="price" class="form-input" placeholder="0.00" step="0.01" min="0" required>
+                                </div>
                             </div>
                             <button type="submit" class="btn-primary w-full">
                                 <i class="fas fa-shopping-cart mr-2"></i>Create Order
                             </button>
                         </form>
-                        <div id="create-order-response" class="response-box" style="display: none;"></div>
+                        <div id="create-order-debug" class="debug-panel" style="display: none;"></div>
                     </div>
 
-                    <!-- Get Orders -->
+                    <!-- Orders List -->
                     <div class="form-card">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">
-                            <i class="fas fa-list mr-2 text-blue-600"></i>
-                            Get All Orders
-                        </h3>
-                        <button onclick="getAllOrders()" class="btn-primary w-full mb-4">
-                            <i class="fas fa-list mr-2"></i>Fetch Orders
-                        </button>
-                        <div id="orders-response" class="response-box" style="display: none;"></div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">
+                                <i class="fas fa-list mr-2 text-blue-600"></i>
+                                Recent Orders
+                            </h3>
+                            <button onclick="loadOrders()" class="btn-primary">
+                                <i class="fas fa-refresh mr-2"></i>Refresh
+                            </button>
+                        </div>
+                        <div id="orders-list">
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                                <p>No orders loaded</p>
+                            </div>
+                        </div>
+                        <div id="orders-debug" class="debug-panel" style="display: none;"></div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Service Architecture Diagram -->
-        <div class="glass-card p-8 mb-8">
-            <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
-                <i class="fas fa-project-diagram mr-3"></i>
-                Service Architecture
-            </h2>
-            <div class="overflow-x-auto">
-                <div id="mermaid" class="flex justify-center">
-                    <pre class="mermaid">
-                        graph TD
-                            FE["🖥️ Frontend<br/>Dashboard"]
-                            AUTH["🔐 Auth Service<br/>Port 8081"]
-                            PRODUCT["📦 Product Service<br/>Port 8082"]
-                            ORDER["🛒 Order Service<br/>Port 8083"]
-                            DB1["🗄️ Auth DB<br/>MongoDB"]
-                            DB2["🗄️ Product DB<br/>MongoDB"]
-                            DB3["🗄️ Order DB<br/>MongoDB"]
-                            
-                            FE --> AUTH
-                            FE --> PRODUCT
-                            FE --> ORDER
-                            ORDER --> PRODUCT
-                            
-                            AUTH --> DB1
-                            PRODUCT --> DB2
-                            ORDER --> DB3
-                            
-                            style FE fill:#667eea,stroke:#333,stroke-width:2px,color:#fff
-                            style AUTH fill:#10b981,stroke:#333,stroke-width:2px,color:#fff
-                            style PRODUCT fill:#f59e0b,stroke:#333,stroke-width:2px,color:#fff
-                            style ORDER fill:#ef4444,stroke:#333,stroke-width:2px,color:#fff
-                            style DB1 fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
-                            style DB2 fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
-                            style DB3 fill:#8b5cf6,stroke:#333,stroke-width:2px,color:#fff
-                    </pre>
+            <!-- Debug Console Tab -->
+            <div id="debug-tab" class="tab-content">
+                <div class="form-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-terminal mr-2 text-purple-600"></i>
+                            Debug Console
+                        </h3>
+                        <div class="flex space-x-2">
+                            <button onclick="clearDebugLog()" class="btn-primary">
+                                <i class="fas fa-trash mr-2"></i>Clear
+                            </button>
+                            <button onclick="exportDebugLog()" class="btn-primary">
+                                <i class="fas fa-download mr-2"></i>Export
+                            </button>
+                        </div>
+                    </div>
+                    <div id="debug-console" class="debug-panel" style="height: 400px;">
+                        <div class="text-green-400">=== MicroMesh Debug Console ===</div>
+                        <div class="text-gray-400">Ready to capture all API requests and responses...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -411,8 +565,8 @@
                 <div class="flex items-center p-4 bg-white bg-opacity-10 rounded-lg">
                     <div class="loading-spinner mr-4"></div>
                     <div class="text-white">
-                        <div class="font-semibold">Initializing testing dashboard...</div>
-                        <div class="text-sm opacity-80">Ready to test all services</div>
+                        <div class="font-semibold">Initializing e-commerce dashboard...</div>
+                        <div class="text-sm opacity-80">Ready to test all microservices</div>
                     </div>
                 </div>
             </div>
@@ -420,18 +574,122 @@
     </div>
 
     <script>
-        mermaid.initialize({ 
-            startOnLoad: true,
-            theme: 'dark',
-            flowchart: {
-                useMaxWidth: true,
-                htmlLabels: true
+        // Global variables
+        let debugMode = false;
+        let requestCount = 0;
+        let debugLog = [];
+        
+        // Initialize charts
+        function initCharts() {
+            // Activity Chart
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'API Requests',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Health Chart
+            const healthCtx = document.getElementById('healthChart').getContext('2d');
+            new Chart(healthCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Auth Service', 'Product Service', 'Order Service'],
+                    datasets: [{
+                        data: [100, 100, 100],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Debug functions
+        function toggleDebugMode() {
+            debugMode = !debugMode;
+            const button = document.getElementById('debug-toggle');
+            const debugPanels = document.querySelectorAll('.debug-panel');
+            
+            if (debugMode) {
+                button.innerHTML = '<i class="fas fa-eye-slash mr-2"></i>Hide Debug';
+                button.classList.add('bg-red-600');
+                debugPanels.forEach(panel => panel.style.display = 'block');
+                addDebugLog('DEBUG MODE ENABLED', 'info');
+            } else {
+                button.innerHTML = '<i class="fas fa-bug mr-2"></i>Debug Mode';
+                button.classList.remove('bg-red-600');
+                debugPanels.forEach(panel => panel.style.display = 'none');
+                addDebugLog('DEBUG MODE DISABLED', 'info');
             }
-        });
+        }
+
+        function addDebugLog(message, type = 'info', data = null) {
+            const timestamp = new Date().toISOString();
+            const logEntry = {
+                timestamp,
+                type,
+                message,
+                data
+            };
+            
+            debugLog.push(logEntry);
+            
+            if (debugMode) {
+                const console = document.getElementById('debug-console');
+                const logLine = document.createElement('div');
+                logLine.className = `text-sm ${type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400'}`;
+                logLine.innerHTML = `[${timestamp.split('T')[1].split('.')[0]}] ${message}`;
+                console.appendChild(logLine);
+                console.scrollTop = console.scrollHeight;
+            }
+        }
+
+        function clearDebugLog() {
+            debugLog = [];
+            document.getElementById('debug-console').innerHTML = '<div class="text-green-400">=== MicroMesh Debug Console ===</div>';
+        }
+
+        function exportDebugLog() {
+            const dataStr = JSON.stringify(debugLog, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `micromesh-debug-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
 
         // Tab functionality
         function showTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -439,7 +697,6 @@
                 btn.classList.remove('active');
             });
 
-            // Show selected tab
             document.getElementById(tabName + '-tab').classList.add('active');
             event.target.classList.add('active');
         }
@@ -448,6 +705,10 @@
         function updateTime() {
             const now = new Date();
             document.getElementById('current-time').textContent = now.toLocaleTimeString();
+        }
+
+        function updateRequestCount() {
+            document.getElementById('request-count').textContent = requestCount;
         }
 
         function addActivity(message, type = 'info') {
@@ -474,11 +735,50 @@
             }
         }
 
-        function showResponse(elementId, data, isSuccess = true) {
-            const responseBox = document.getElementById(elementId);
-            responseBox.style.display = 'block';
-            responseBox.className = `response-box ${isSuccess ? 'success-response' : 'error-response'}`;
-            responseBox.innerHTML = `<strong>${isSuccess ? '✅ Success' : '❌ Error'}:</strong><br>${JSON.stringify(data, null, 2)}`;
+        // API wrapper with debug logging
+        async function apiCall(endpoint, options = {}, debugId = '') {
+            requestCount++;
+            updateRequestCount();
+            
+            const startTime = Date.now();
+            const requestData = {
+                url: endpoint,
+                method: options.method || 'GET',
+                headers: options.headers || {},
+                body: options.body ? JSON.parse(options.body) : null
+            };
+            
+            addDebugLog(`🚀 REQUEST ${debugId}: ${requestData.method} ${endpoint}`, 'info', requestData);
+            addActivity(`API Request: ${requestData.method} ${endpoint.split('/').pop()}`, 'info');
+            
+            try {
+                const response = await fetch(endpoint, options);
+                const responseTime = Date.now() - startTime;
+                const responseData = await response.json();
+                
+                const debugInfo = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    responseTime: `${responseTime}ms`,
+                    data: responseData
+                };
+                
+                addDebugLog(`✅ RESPONSE ${debugId}: ${response.status} (${responseTime}ms)`, 
+                    response.ok ? 'success' : 'error', debugInfo);
+                
+                if (response.ok) {
+                    addActivity(`API Success: ${endpoint.split('/').pop()}`, 'success');
+                } else {
+                    addActivity(`API Error: ${response.status}`, 'error');
+                }
+                
+                return { response, data: responseData };
+            } catch (error) {
+                const errorTime = Date.now() - startTime;
+                addDebugLog(`❌ ERROR ${debugId}: ${error.message} (${errorTime}ms)`, 'error', { error: error.message });
+                addActivity(`API Error: ${error.message}`, 'error');
+                throw error;
+            }
         }
 
         // Auth Service API calls
@@ -488,24 +788,22 @@
             const data = Object.fromEntries(formData);
             
             try {
-                const response = await fetch('/api/auth/register', {
+                const { response, data: result } = await apiCall('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
+                }, 'REGISTER');
                 
                 if (response.ok) {
-                    showResponse('register-response', result, true);
-                    addActivity(`User registered: ${data.username}`, 'success');
+                    document.getElementById('register-debug').innerHTML = `<div class="text-green-400">✅ Success</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    document.getElementById('register-debug').style.display = debugMode ? 'block' : 'none';
                 } else {
-                    showResponse('register-response', result, false);
-                    addActivity(`Registration failed: ${result.message}`, 'error');
+                    document.getElementById('register-debug').innerHTML = `<div class="text-red-400">❌ Error</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    document.getElementById('register-debug').style.display = debugMode ? 'block' : 'none';
                 }
             } catch (error) {
-                showResponse('register-response', { error: error.message }, false);
-                addActivity(`Registration error: ${error.message}`, 'error');
+                document.getElementById('register-debug').innerHTML = `<div class="text-red-400">❌ Network Error</div><pre>${error.message}</pre>`;
+                document.getElementById('register-debug').style.display = debugMode ? 'block' : 'none';
             }
         });
 
@@ -515,24 +813,22 @@
             const data = Object.fromEntries(formData);
             
             try {
-                const response = await fetch('/api/auth/login', {
+                const { response, data: result } = await apiCall('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
+                }, 'LOGIN');
                 
                 if (response.ok) {
-                    showResponse('login-response', { ...result, token: '***HIDDEN***' }, true);
-                    addActivity(`User logged in: ${data.username}`, 'success');
+                    document.getElementById('login-debug').innerHTML = `<div class="text-green-400">✅ Success</div><pre>${JSON.stringify({...result, token: '***HIDDEN***'}, null, 2)}</pre>`;
+                    document.getElementById('login-debug').style.display = debugMode ? 'block' : 'none';
                 } else {
-                    showResponse('login-response', result, false);
-                    addActivity(`Login failed: ${result.message}`, 'error');
+                    document.getElementById('login-debug').innerHTML = `<div class="text-red-400">❌ Error</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    document.getElementById('login-debug').style.display = debugMode ? 'block' : 'none';
                 }
             } catch (error) {
-                showResponse('login-response', { error: error.message }, false);
-                addActivity(`Login error: ${error.message}`, 'error');
+                document.getElementById('login-debug').innerHTML = `<div class="text-red-400">❌ Network Error</div><pre>${error.message}</pre>`;
+                document.getElementById('login-debug').style.display = debugMode ? 'block' : 'none';
             }
         });
 
@@ -545,42 +841,58 @@
             data.stockQuantity = parseInt(data.stockQuantity);
             
             try {
-                const response = await fetch('/api/products', {
+                const { response, data: result } = await apiCall('/api/products', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
+                }, 'ADD_PRODUCT');
                 
                 if (response.ok) {
-                    showResponse('add-product-response', result, true);
-                    addActivity(`Product added: ${data.name}`, 'success');
+                    document.getElementById('add-product-debug').innerHTML = `<div class="text-green-400">✅ Success</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    document.getElementById('add-product-debug').style.display = debugMode ? 'block' : 'none';
+                    loadProducts(); // Refresh products list
                 } else {
-                    showResponse('add-product-response', result, false);
-                    addActivity(`Product creation failed: ${result.message}`, 'error');
+                    document.getElementById('add-product-debug').innerHTML = `<div class="text-red-400">❌ Error</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    document.getElementById('add-product-debug').style.display = debugMode ? 'block' : 'none';
                 }
             } catch (error) {
-                showResponse('add-product-response', { error: error.message }, false);
-                addActivity(`Product creation error: ${error.message}`, 'error');
+                document.getElementById('add-product-debug').innerHTML = `<div class="text-red-400">❌ Network Error</div><pre>${error.message}</pre>`;
+                document.getElementById('add-product-debug').style.display = debugMode ? 'block' : 'none';
             }
         });
 
-        async function getAllProducts() {
+        async function loadProducts() {
             try {
-                const response = await fetch('/api/products');
-                const result = await response.json();
+                const { response, data: products } = await apiCall('/api/products', {}, 'GET_PRODUCTS');
                 
                 if (response.ok) {
-                    showResponse('products-response', result, true);
-                    addActivity(`Fetched ${result.length} products`, 'success');
+                    const productsList = document.getElementById('products-list');
+                    document.getElementById('product-count').textContent = products.length;
+                    
+                    if (products.length === 0) {
+                        productsList.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-box text-4xl mb-4"></i><p>No products available</p></div>';
+                    } else {
+                        productsList.innerHTML = products.map(product => `
+                            <div class="product-card">
+                                <h4 class="font-semibold text-gray-800 mb-2">${product.name}</h4>
+                                <p class="text-gray-600 text-sm mb-2">${product.description}</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-green-600 font-bold">$${product.price}</span>
+                                    <span class="text-gray-500 text-sm">Stock: ${product.stockQuantity}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    
+                    document.getElementById('products-debug').innerHTML = `<div class="text-green-400">✅ Loaded ${products.length} products</div><pre>${JSON.stringify(products, null, 2)}</pre>`;
+                    document.getElementById('products-debug').style.display = debugMode ? 'block' : 'none';
                 } else {
-                    showResponse('products-response', result, false);
-                    addActivity(`Failed to fetch products: ${result.message}`, 'error');
+                    document.getElementById('products-debug').innerHTML = `<div class="text-red-400">❌ Error loading products</div><pre>${JSON.stringify(products, null, 2)}</pre>`;
+                    document.getElementById('products-debug').style.display = debugMode ? 'block' : 'none';
                 }
             } catch (error) {
-                showResponse('products-response', { error: error.message }, false);
-                addActivity(`Products fetch error: ${error.message}`, 'error');
+                document.getElementById('products-debug').innerHTML = `<div class="text-red-400">❌ Network Error</div><pre>${error.message}</pre>`;
+                document.getElementById('products-debug').style.display = debugMode ? 'block' : 'none';
             }
         }
 
@@ -589,57 +901,97 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
-            data.quantity = parseInt(data.quantity);
+            
+            // Format the data according to backend requirements
+            const orderData = {
+                customerName: data.customerName,
+                customerEmail: data.customerEmail,
+                items: [{
+                    productId: data.productId,
+                    productName: data.productName,
+                    quantity: parseInt(data.quantity),
+                    price: parseFloat(data.price)
+                }]
+            };
             
             try {
-                const response = await fetch('/api/orders', {
+                const { response, data: result } = await apiCall('/api/orders', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
+                    body: JSON.stringify(orderData)
+                }, 'CREATE_ORDER');
                 
                 if (response.ok) {
-                    showResponse('create-order-response', result, true);
-                    addActivity(`Order created: ${data.customerName}`, 'success');
+                    document.getElementById('create-order-debug').innerHTML = `<div class="text-green-400">✅ Success</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    document.getElementById('create-order-debug').style.display = debugMode ? 'block' : 'none';
+                    loadOrders(); // Refresh orders list
                 } else {
-                    showResponse('create-order-response', result, false);
-                    addActivity(`Order creation failed: ${result.message}`, 'error');
+                    document.getElementById('create-order-debug').innerHTML = `<div class="text-red-400">❌ Error</div><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    document.getElementById('create-order-debug').style.display = debugMode ? 'block' : 'none';
                 }
             } catch (error) {
-                showResponse('create-order-response', { error: error.message }, false);
-                addActivity(`Order creation error: ${error.message}`, 'error');
+                document.getElementById('create-order-debug').innerHTML = `<div class="text-red-400">❌ Network Error</div><pre>${error.message}</pre>`;
+                document.getElementById('create-order-debug').style.display = debugMode ? 'block' : 'none';
             }
         });
 
-        async function getAllOrders() {
+        async function loadOrders() {
             try {
-                const response = await fetch('/api/orders');
-                const result = await response.json();
+                const { response, data: orders } = await apiCall('/api/orders', {}, 'GET_ORDERS');
                 
                 if (response.ok) {
-                    showResponse('orders-response', result, true);
-                    addActivity(`Fetched ${result.length} orders`, 'success');
+                    const ordersList = document.getElementById('orders-list');
+                    document.getElementById('order-count').textContent = orders.length;
+                    
+                    if (orders.length === 0) {
+                        ordersList.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-shopping-cart text-4xl mb-4"></i><p>No orders available</p></div>';
+                    } else {
+                        ordersList.innerHTML = orders.map(order => `
+                            <div class="order-card">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-semibold text-gray-800">Order #${order.id}</h4>
+                                    <span class="text-sm px-2 py-1 rounded-full ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${order.status}</span>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-2">Customer: ${order.customerName}</p>
+                                <p class="text-gray-600 text-sm mb-2">Items: ${order.items ? order.items.length : 0}</p>
+                                <p class="text-green-600 font-bold">Total: $${order.totalAmount || 0}</p>
+                            </div>
+                        `).join('');
+                    }
+                    
+                    document.getElementById('orders-debug').innerHTML = `<div class="text-green-400">✅ Loaded ${orders.length} orders</div><pre>${JSON.stringify(orders, null, 2)}</pre>`;
+                    document.getElementById('orders-debug').style.display = debugMode ? 'block' : 'none';
                 } else {
-                    showResponse('orders-response', result, false);
-                    addActivity(`Failed to fetch orders: ${result.message}`, 'error');
+                    document.getElementById('orders-debug').innerHTML = `<div class="text-red-400">❌ Error loading orders</div><pre>${JSON.stringify(orders, null, 2)}</pre>`;
+                    document.getElementById('orders-debug').style.display = debugMode ? 'block' : 'none';
                 }
             } catch (error) {
-                showResponse('orders-response', { error: error.message }, false);
-                addActivity(`Orders fetch error: ${error.message}`, 'error');
+                document.getElementById('orders-debug').innerHTML = `<div class="text-red-400">❌ Network Error</div><pre>${error.message}</pre>`;
+                document.getElementById('orders-debug').style.display = debugMode ? 'block' : 'none';
             }
         }
 
         // Initialize
-        updateTime();
-        setInterval(updateTime, 1000);
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // Initialize charts
+            initCharts();
+            
+            // Load initial data
+            loadProducts();
+            loadOrders();
+            
+            // Add initial activities
+            setTimeout(() => {
+                addActivity('E-commerce dashboard initialized', 'success');
+                addActivity('Ready to test all microservices', 'info');
+            }, 1000);
+        });
 
-        // Add initial activities
-        setTimeout(() => {
-            addActivity('Testing dashboard initialized', 'success');
-            addActivity('Ready to test all microservices', 'info');
-        }, 1000);
+        // Debug toggle event
+        document.getElementById('debug-toggle').addEventListener('click', toggleDebugMode);
     </script>
 </body>
 </html> 
